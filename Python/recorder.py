@@ -6,7 +6,7 @@ import socket
 import datetime
 import sys
 import time
-
+import json
 
 HOST = "0.0.0.0"           
 PORT = 50009
@@ -29,9 +29,11 @@ def MsgDecode(data):
     
     return name, rec_length, fps
 
-def WriteFiles(name, counter, img):
+def WriteFiles(name, counter, img, roi):
+    img = img.get_image_data_numpy()
+    img = img[roi[2]: roi[3], roi[0]: roi[1]]
     cv2.imwrite(name+'/IMG'+str(100000 + counter)+'.png', 
-                        img.get_image_data_numpy())
+                       img)
     
     return 0
 
@@ -51,6 +53,7 @@ def MakeRecording(name, rec_length, fps=30):
     
     cam.set_imgdataformat('XI_RAW8')
     cam.set_exposure(exp)
+    print(gain)
     cam.set_param('gain', gain)
     img = xiapi.Image()
     cam.start_acquisition()                 
@@ -72,9 +75,8 @@ def MakeRecording(name, rec_length, fps=30):
             time_prev = time.time()
             
             cam.get_image(img)
-            img = img[roi[2]: roi[3], roi[0]: roi[1]]
             
-            if WriteFiles(name, N, img) == 0:
+            if WriteFiles(name, N, img, roi) == 0:
                 N += 1
             else:
                 PrintOut("Failed")
